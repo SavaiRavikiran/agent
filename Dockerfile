@@ -24,5 +24,7 @@ COPY agent/ ./agent/
 
 USER appuser
 
+EXPOSE 8000
+
 ENTRYPOINT ["python", "-m", "agent.cli"]
 CMD ["What is 23 * 47 + 10?"]

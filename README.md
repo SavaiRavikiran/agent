@@ -19,15 +19,58 @@ Without `ANTHROPIC_API_KEY` the agent falls back to a deterministic offline
 LLM stub. Without `LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY` it runs with
 tracing disabled instead of failing.
 
+## Web UI
+
+```bash
+python -m agent.web
+```
+
+Open http://localhost:8000, type a question, click Ask. Shows the tool-call
+trace and the final answer with its correctness score, same as the CLI.
+
 ## Run in Docker
+
+Build the image once, from this directory:
 
 ```bash
 docker build -t agent:latest .
-docker run --rm agent:latest "What is 8 * 8?"
-
-# with Langfuse tracing (Langfuse running on the host):
-docker run --rm --env-file .env agent:latest "What is 8 * 8?"
 ```
 
-When Langfuse runs on the host and the agent runs in Docker Desktop, set
-`LANGFUSE_HOST=http://host.docker.internal:3000` in `.env` (not `localhost`).
+### Web UI
+
+Start it in the background. Leave `LANGFUSE_HOST` in `.env` as
+`http://localhost:3000` for runs on the host. The `-e` flags override that
+only inside the container, so Docker Desktop can reach Langfuse on the host.
+
+```bash
+docker run -d --name agent-web -p 8000:8000 --env-file .env \
+  -e LANGFUSE_HOST=http://host.docker.internal:3000 \
+  -e LANGFUSE_BASE_URL=http://host.docker.internal:3000 \
+  --entrypoint python agent:latest -m agent.web
+```
+
+Open http://localhost:8000.
+
+Stop it, then start the same container again:
+
+```bash
+docker stop agent-web
+docker start agent-web
+```
+
+Remove it when you want a fresh container (required after a rebuild):
+
+```bash
+docker rm -f agent-web
+```
+
+### CLI
+
+One question, then the container exits:
+
+```bash
+docker run --rm --env-file .env \
+  -e LANGFUSE_HOST=http://host.docker.internal:3000 \
+  -e LANGFUSE_BASE_URL=http://host.docker.internal:3000 \
+  agent:latest "What is 8 * 8?"
+```

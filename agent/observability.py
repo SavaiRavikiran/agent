@@ -58,11 +58,28 @@ class Observability:
             logger.warning("Langfuse span '%s' failed; continuing without tracing", name, exc_info=True)
             yield _NoOpSpan()
 
-    def tag_trace(self, *, user_id: str, session_id: str, tags: List[str]) -> None:
+    def tag_trace(
+        self,
+        *,
+        user_id: str,
+        session_id: str,
+        tags: List[str],
+        input: Any = None,
+        output: Any = None,
+    ) -> None:
         if not self.enabled or self._client is None:
             return
         try:
-            self._client.update_current_trace(user_id=user_id, session_id=session_id, tags=tags)
+            fields: dict[str, Any] = {
+                "user_id": user_id,
+                "session_id": session_id,
+                "tags": tags,
+            }
+            if input is not None:
+                fields["input"] = input
+            if output is not None:
+                fields["output"] = output
+            self._client.update_current_trace(**fields)
         except Exception:
             logger.warning("Failed to tag trace with session/user info", exc_info=True)
 
